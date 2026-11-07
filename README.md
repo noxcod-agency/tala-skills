@@ -8,7 +8,7 @@ With this skill, your coding or chat assistant knows how to:
 
 - connect ChatGPT, Claude or Claude Code to Tala's read-only connector, then answer "show my latest calls" or "summarize this call";
 - use the Tala public API to list agents, read call history and results, and start an outbound call only after your confirmation;
-- receive post-call webhooks in a CRM, Zapier, Make or n8n without duplicate rows.
+- receive post-call webhooks in a CRM, Zapier, Make or n8n, and handle repeated deliveries.
 
 ## Install
 

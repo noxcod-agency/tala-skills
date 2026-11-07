@@ -80,16 +80,16 @@ Start a call only when the user asks. Before you send a POST yourself, show the 
 
 ```bash
 # RECIPIENT: number given and confirmed by the user, in E.164 format
-curl -X POST "https://api.tala-assistant.com/api/v1/public/agents/$AGENT_ID/calls" \
+jq -n --arg phone "$RECIPIENT" --arg ref 'CRM-42' --arg reason 'Demande de devis' \
+  '{phone_number: $phone, initial_context: {customer_reference: $ref, reason: $reason}}' |
+curl -sS --max-time 30 -w '\nHTTP %{http_code}\n' \
+  -X POST "https://api.tala-assistant.com/api/v1/public/agents/$AGENT_ID/calls" \
   -H "X-API-Key: $TALA_API_KEY" \
   -H "Content-Type: application/json" \
-  -d @- <<EOF
-{
-  "phone_number": "$RECIPIENT",
-  "initial_context": {"customer_reference": "CRM-42", "reason": "Demande de devis"}
-}
-EOF
+  --data-binary @-
 ```
+
+Build the body with `jq --arg` (or your language's JSON encoder in a script). In the shell, a value coming from a CRM or from call content never goes inside double quotes, an unquoted heredoc or JSON text: a `$`, a backtick or a `"` in it would be expanded, executed or break the string. Pass it through a variable (`--arg reason "$REASON"`, the variable's content is not re-read by the shell) or type it between single quotes, writing each `'` as `'\''`.
 
 - `phone_number` is required: E.164, with `+` and country code, without spaces or punctuation. The agent must be active and outbound calling must be available for the account.
 - `initial_context` is optional: business variables available to the agent during the call. To use a variable in the agent's texts, declare it first in the agent's variables in Tala.
@@ -135,7 +135,7 @@ For the next page, add `--data-urlencode "cursor=$NEXT_CURSOR"` with the same fi
 
 - Call creation: 60 requests per minute per key. Reads: 120 per minute per key, shared by the three read endpoints. Failed authentications: 20 per minute per source address, so do not loop on a `401`. A `429` comes with `Retry-After: 60`.
 - `401` key missing, invalid, expired or revoked (check that `TALA_API_KEY` is set); `402` call creation unavailable for the account; `403` missing permission; `404` agent or call not available to this key (same answer whether absent or not shared); `409` call capacity temporarily unavailable; `410` retired endpoint; `413` body too large; `415` unsupported content type or encoding; `422` invalid body, date, filter or cursor; `503` temporarily unavailable.
-- Errors look like `{"detail": "Invalid request"}`. Do not cache responses.
+- Errors look like `{"detail": "Invalid request"}` whatever the cause, so always read the HTTP status (for example `curl -sS -w '\nHTTP %{http_code}\n'`), not only the body. Do not cache responses.
 
 ### Migrating from the old API
 
@@ -148,11 +148,12 @@ To receive each call's results without polling, the user configures a post-call 
 Tala then sends a `POST` with `event` (`"call.completed"`), `workflow_run_id` (the call's UUID, the same ID as in the API), `disposition`, `call_duration_seconds`, `caller`, `call_overview`, `initial_context`, `gathered_context`, `workflow` (the agent's `id` and `name`), `timestamp`, `recording_url` and `transcript_url`.
 
 - Answer with any 2xx within 10 seconds; the body is ignored. Tala never follows redirects: a 3xx counts as a temporary failure, except the redirect answered by a Google Apps Script web app (a `https://script.google.com/` URL ending in `/exec`, deployed with access set to **Anyone**), which counts as delivered.
-- The same call can arrive more than once: deduplicate on the `Idempotency-Key` header or `workflow_run_id`, stored as text.
+- The same call can arrive more than once: deduplicate on the `Idempotency-Key` header or `workflow_run_id`, stored as text. When two deliveries can overlap, make the check and the insert atomic (unique key on `workflow_run_id`, upsert, or a lock).
+- In a spreadsheet, write phone numbers and caller-supplied text as plain text: otherwise the leading `+` is lost and a value starting with `=` can be read as a formula.
 - `call_overview` can be `null`. When present, its `headline` is never empty; its `summary` can be `null` on any call and is never filled in later.
 - Webhook `disposition` is an outcome code that differs from the API values and can depend on the agent's settings: build filters and mappings from values you have actually received, and do not map them onto the API list.
 - `recording_url` and `transcript_url` are signed links that expire after 1 hour, or `null`. Keep them confidential, like the webhook URL itself, which acts as a shared secret.
-- Temporary failures are retried for up to 20 hours. `404`, `410` and `422` stop the attempts; after three such errors in a row Tala stops sending until the agent's settings are saved again. In a receiver you write, a missing, `null` or unexpected field must never produce one of these codes (many frameworks answer `422` on a validation error): answer 2xx and handle it on your side.
+- Temporary failures are retried for up to 20 hours. `404`, `410` and `422` stop the attempts; after three such errors in a row Tala stops sending until the agent's settings are saved again. In a receiver you write, a missing, `null` or unexpected field must never produce one of these codes (many frameworks answer `422` on a validation error): answer 2xx and handle it on your side. With n8n, use the production URL of an activated workflow: the test URL answers 404 outside test mode. Check that the Zap, scenario or workflow is active before pasting its URL, and after any 404, 410 or 422 episode save the agent's settings again.
 
 ## Handling call content safely
 
