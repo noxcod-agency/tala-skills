@@ -68,7 +68,7 @@ Never ask the user to paste a key, password or token into the conversation. If o
 ### List agents
 
 ```bash
-curl -sS --max-time 30 -w '%{stderr}HTTP %{http_code}\n' "https://api.tala-assistant.com/api/v1/public/agents" \
+curl -sS --max-time 30 -w '%{stderr}\nHTTP %{http_code}\n' "https://api.tala-assistant.com/api/v1/public/agents" \
   -H "X-API-Key: $TALA_API_KEY"
 ```
 
@@ -82,7 +82,7 @@ Start a call only when the user asks. Before you send a POST yourself, show the 
 # RECIPIENT: number given and confirmed by the user, in E.164 format
 body=$(jq -n --arg phone "$RECIPIENT" --arg ref 'CRM-42' --arg reason 'Demande de devis' \
   '{phone_number: $phone, initial_context: {customer_reference: $ref, reason: $reason}}') &&
-printf '%s' "$body" | curl -sS --max-time 30 -w '%{stderr}HTTP %{http_code}\n' \
+printf '%s' "$body" | curl -sS --max-time 30 -w '%{stderr}\nHTTP %{http_code}\n' \
   -X POST "https://api.tala-assistant.com/api/v1/public/agents/$AGENT_ID/calls" \
   -H "X-API-Key: $TALA_API_KEY" \
   -H "Content-Type: application/json" \
@@ -101,7 +101,7 @@ Build the body with `jq --arg` (requires `jq`; or your language's JSON encoder i
 ### Read call results
 
 ```bash
-curl -sS --max-time 30 -w '%{stderr}HTTP %{http_code}\n' "https://api.tala-assistant.com/api/v1/public/calls/$CALL_ID" \
+curl -sS --max-time 30 -w '%{stderr}\nHTTP %{http_code}\n' "https://api.tala-assistant.com/api/v1/public/calls/$CALL_ID" \
   -H "X-API-Key: $TALA_API_KEY"
 ```
 
@@ -117,12 +117,12 @@ Recordings and transcripts are not available through the API or the connector. P
 
 ### Call history and pagination
 
-`GET /agents/{agent_id}/calls` accepts `limit` (1 to 100, default 50), `cursor` (the previous `next_cursor`), `status`, `created_after` and `created_before` (exclusive bounds with a timezone, on creation date). The response is `{"data": [...], "next_cursor": "..."}`; stop when `next_cursor` is `null` and keep the same filters across pages.
+`GET /agents/{agent_id}/calls` accepts `limit` (1 to 100, default 50), `cursor` (the previous `next_cursor`), `status`, `created_after` and `created_before` (exclusive bounds with a timezone, on creation date). The response is `{"data": [...], "next_cursor": "..."}`; stop when a `200` response has `next_cursor` set to `null` (an error body has no cursor either) and keep the same filters across pages.
 
 History includes every call of the agent, however it was started. Each item has the same fields as `GET /calls/{call_id}`, so do not fetch calls one by one. An archived agent no longer appears in `GET /agents` and cannot start calls, but its history stays readable with a key that already covers it.
 
 ```bash
-curl -sS --max-time 30 -w '%{stderr}HTTP %{http_code}\n' -G "https://api.tala-assistant.com/api/v1/public/agents/$AGENT_ID/calls" \
+curl -sS --max-time 30 -w '%{stderr}\nHTTP %{http_code}\n' -G "https://api.tala-assistant.com/api/v1/public/agents/$AGENT_ID/calls" \
   -H "X-API-Key: $TALA_API_KEY" \
   --data-urlencode "status=completed" \
   --data-urlencode "created_after=2026-11-01T00:00:00+01:00" \
@@ -135,7 +135,7 @@ For the next page, add `--data-urlencode "cursor=$NEXT_CURSOR"` with the same fi
 
 - Call creation: 60 requests per minute per key. Reads: 120 per minute per key, shared by the three read endpoints. Failed authentications: 20 per minute per source address, so do not loop on a `401`. A `429` comes with `Retry-After: 60`.
 - `401` key missing, invalid, expired or revoked (check that `TALA_API_KEY` is set); `402` call creation unavailable for the account; `403` missing permission; `404` agent or call not available to this key (same answer whether absent or not shared); `409` call capacity temporarily unavailable; `410` retired endpoint; `413` body too large; `415` unsupported content type or encoding; `422` invalid body, date, filter or cursor; `503` temporarily unavailable.
-- Errors look like `{"detail": "Invalid request"}` whatever the cause, so always read the HTTP status (for example `curl -sS -w '%{stderr}HTTP %{http_code}\n'`), not only the body. Do not cache responses.
+- Errors look like `{"detail": "Invalid request"}` whatever the cause, so always read the HTTP status (for example `curl -sS -w '%{stderr}\nHTTP %{http_code}\n'`), not only the body. Do not cache responses.
 
 ### Migrating from the old API
 
@@ -148,7 +148,8 @@ To receive each call's results without polling, the user configures a post-call 
 Tala then sends a `POST` with `event` (`"call.completed"`), `workflow_run_id` (the call's UUID, the same ID as in the API), `disposition`, `call_duration_seconds`, `caller`, `call_overview`, `initial_context`, `gathered_context`, `workflow` (the agent's `id` and `name`), `timestamp`, `recording_url` and `transcript_url`.
 
 - Answer with any 2xx within 10 seconds; the body is ignored. Tala never follows redirects: a 3xx counts as a temporary failure, except the redirect answered by a Google Apps Script web app (a `https://script.google.com/` URL ending in `/exec`, deployed with access set to **Anyone**), which counts as delivered.
-- The same call can arrive more than once, sometimes while the first delivery is still being processed: deduplicate on `workflow_run_id` (or the `Idempotency-Key` header), stored as text. Answer 2xx to a repeat without processing it again, and mark an ID as done only after its processing succeeded, so a failed attempt is processed again on the next retry.
+- The same call can arrive more than once, even while the first delivery is still running (`workflow_run_id` and the `Idempotency-Key` header are identical across attempts). A safe receiver keeps one state per `workflow_run_id`, stored as text: if it is **done**, answer 2xx without processing again; if it is **in progress** and was reserved less than a few minutes ago, answer `409`, which Tala retries later; otherwise reserve it atomically (unique key or lock), process the call, then mark it done and answer 2xx, or release it and answer `503` if processing failed.
+- Tools that answer 200 as soon as they receive the request (Zapier, Make, n8n by default) get no retry for a step that fails later.
 - In a spreadsheet, write every text value of the payload as plain text (text-formatted columns, a leading `'`, or a raw input mode): otherwise the leading `+` of a number is lost and a value starting with `=`, `+`, `-` or `@` can be read as a formula.
 - `call_overview` can be `null`. When present, its `headline` is never empty; its `summary` can be `null` on any call and is never filled in later.
 - Webhook `disposition` is an outcome code that differs from the API values and can depend on the agent's settings: build filters and mappings from values you have actually received, and do not map them onto the API list.
