@@ -48,9 +48,9 @@ Claude Code:
 claude mcp add --transport http tala https://mcp.tala-assistant.com/mcp
 ```
 
-Then type `/mcp`, choose `tala` and sign in. The consent screen names Claude Code: continue only if the user has just started this connection. In ChatGPT or Claude, choose Tala in the connector directory if it is listed, or add a custom connector with the same URL; the workspace must allow connectors, and its administrator may need to enable them. Tala documents the connector for ChatGPT, Claude, Claude Code and Hermes Agent; for Hermes Agent, use the plugin in this repository's `plugins/hermes` folder.
+Then type `/mcp`, choose `tala` and sign in. The consent screen names Claude Code: continue only if the user has just started this connection. In ChatGPT or Claude, choose Tala in the connector directory if it is listed, or add a custom connector with the same URL; the workspace must allow connectors, and its administrator may need to enable them. Tala documents the connector for ChatGPT, Claude, Claude Code and Hermes Agent. For Hermes Agent, the user runs `hermes mcp add tala --url https://mcp.tala-assistant.com/mcp --auth oauth --connect-timeout 300` from a terminal. The consent screen names Hermes Agent: continue only if the user has just run that command. The address shown after authorizing goes only into the field Hermes shows in that terminal; if it is pasted into the conversation, do not use it and have the user start again. To change the shared agents later, revoke the connection in Tala, then run `hermes mcp login tala`. An optional Hermes plugin (`hermes plugins install noxcod-agency/tala-skills/plugins/hermes`, then `hermes plugins enable tala`) declares the same `tala` server and adds a connector skill; see its [README](https://github.com/noxcod-agency/tala-skills/blob/main/plugins/hermes/README.md).
 
-During consent the user picks one organization and the exact agents to share. Agents created later are not included: reconnect to add them.
+During consent the user picks one organization and the exact agents to share. Agents created later are not included: reconnect to add them (for Hermes Agent, revoke in Tala, then `hermes mcp login tala`).
 
 Capabilities (use the tools the connector exposes):
 

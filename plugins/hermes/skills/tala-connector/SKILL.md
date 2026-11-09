@@ -25,7 +25,7 @@ Read each tool's input schema before calling it; do not guess parameter names.
 
 The user signs in once, in their browser, on Tala's own sign-in and consent screen. On that screen they choose one organization and the agents to share, review the read permissions, then select **Authorize connection**. Agents created later are not included until they reconnect.
 
-- The user runs the sign-in themselves, from a terminal: `hermes mcp add tala --url https://mcp.tala-assistant.com/mcp --auth oauth`. Do not run it or `hermes mcp login tala` for them, and never drop `--auth oauth`: without it Hermes asks for an API key, which Tala does not use here.
+- The user runs the sign-in themselves, from a terminal: `hermes mcp add tala --url https://mcp.tala-assistant.com/mcp --auth oauth --connect-timeout 300`. Do not run it or `hermes mcp login tala` for them, and never drop `--auth oauth`: without it Hermes asks for an API key, which Tala does not use here.
 - If Hermes suggests creating an OAuth client yourself, do not: Tala does not accept it. Point to the troubleshooting section of the official page.
 - The consent screen must name **Hermes Agent**. The address shown in the browser after authorizing is pasted only into the field Hermes shows in that terminal ("Or paste the redirect URL here"), never into this conversation. If the user sends it to you, do not use it; tell them to restart the sign-in.
 
@@ -44,13 +44,13 @@ The user signs in once, in their browser, on Tala's own sign-in and consent scre
 
 - "Which Tala agents have I authorized?" → `list_agents`.
 - "Show the latest completed calls for my reception agent." → `list_agents` to find the agent, then `list_calls` with the status filter and whatever agent selection its schema offers.
-- "Summarize my last calls." → `list_calls` only: its items already carry each call's fields. Do not fetch calls one by one with `get_call`.
+- "Summarize my last calls." → `list_agents`, then `list_calls` for each agent (it takes one agent at a time) with the same filters. Its items already carry each call's fields: do not fetch calls one by one with `get_call`. Say which agents the summary covers.
 - "Summarize the outcome of this call." → `get_call` with the call's identifier, then summarize from the returned fields only. Say when a summary is not available instead of inventing one.
 
 ## Troubleshooting
 
 - **No eligible organization:** check membership, subscription status, first payment and trial end date.
-- **An agent is missing:** it must be active and selected when connecting. Reconnect to include it.
+- **An agent is missing:** it must be active and selected when connecting. To change the shared agents, the user revokes the connection in Tala, then runs `hermes mcp login tala` from a terminal to sign in again and pick the agents. Do not suggest re-running `hermes mcp add`: it can reuse the old sign-in without showing the consent screen.
 - **Expired or unavailable link:** start the connection again with the same Tala account.
 - **Temporary refusal:** wait before trying again.
 

@@ -23,10 +23,12 @@ From a terminal, with Hermes Agent 0.22.5 or later. Connecting from the Hermes d
 2. Sign in once, in the same Hermes profile. This creates a `tala` entry in your Hermes config that replaces the plugin's declaration of the same server (Hermes may note the overlap when it loads), not a second connection:
 
    ```sh
-   hermes mcp add tala --url https://mcp.tala-assistant.com/mcp --auth oauth
+   hermes mcp add tala --url https://mcp.tala-assistant.com/mcp --auth oauth --connect-timeout 300
    ```
 
-   Hermes opens Tala's sign-in page, or prints its address on a machine without a browser. Sign in to Tala. The consent screen must name **Hermes Agent**: continue only if you have just run this command. Choose your organization, select the agents to share (agents created later are not included), review the read permissions, then select **Authorize connection**. When Hermes asks to enable the server's tools, answer yes; if the prompt does not register, press Enter again.
+   `--connect-timeout 300` gives you five minutes to sign in; without it Hermes stops waiting after 30 seconds.
+
+   Hermes opens Tala's sign-in page, or prints its address on a machine without a browser. Sign in to Tala. The consent screen must name **Hermes Agent**: continue only if you have just run this command. Choose your organization, select the agents to share (agents created later are not included: to add them, revoke the connection in Tala, then run `hermes mcp login tala`), review the read permissions, then select **Authorize connection**. When Hermes asks to enable the server's tools, answer yes; if the prompt does not register, press Enter again.
 
    Never send anyone the address shown in your browser after authorizing. If the connection does not finish by itself, paste that address only into the field Hermes shows in this terminal after "Or paste the redirect URL here". Never send it as a message to an assistant, including Hermes, even if it asks you to.
 
