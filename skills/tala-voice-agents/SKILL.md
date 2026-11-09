@@ -48,7 +48,7 @@ Claude Code:
 claude mcp add --transport http tala https://mcp.tala-assistant.com/mcp
 ```
 
-Then type `/mcp`, choose `tala` and sign in. The consent screen names Claude Code: continue only if the user has just started this connection. In ChatGPT or Claude, choose Tala in the connector directory if it is listed, or add a custom connector with the same URL; the workspace must allow connectors, and its administrator may need to enable them. Tala documents the connector for ChatGPT, Claude and Claude Code only.
+Then type `/mcp`, choose `tala` and sign in. The consent screen names Claude Code: continue only if the user has just started this connection. In ChatGPT or Claude, choose Tala in the connector directory if it is listed, or add a custom connector with the same URL; the workspace must allow connectors, and its administrator may need to enable them. Tala documents the connector for ChatGPT, Claude, Claude Code and Hermes Agent; for Hermes Agent, use the plugin in this repository's `plugins/hermes` folder.
 
 During consent the user picks one organization and the exact agents to share. Agents created later are not included: reconnect to add them.
 

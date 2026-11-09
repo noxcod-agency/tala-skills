@@ -16,13 +16,18 @@ With this skill, your coding or chat assistant knows how to:
 npx skills add noxcod-agency/tala-skills
 ```
 
-The skill installs in Claude Code, Codex, Cursor and the other agents supported by the [skills CLI](https://github.com/vercel-labs/skills). Tala documents its read-only connector for ChatGPT, Claude and Claude Code.
+The skill installs in Claude Code, Codex, Cursor and the other agents supported by the [skills CLI](https://github.com/vercel-labs/skills). Tala documents its read-only connector for ChatGPT, Claude, Claude Code and Hermes Agent.
+
+### Hermes Agent
+
+[`plugins/hermes`](plugins/hermes) packages the read-only connector as a Hermes Agent plugin: the server declaration plus a `tala-connector` skill. Its [README](plugins/hermes/README.md) covers install, sign-in and the data shared.
 
 ## Skills
 
 | Skill | What it does |
 | --- | --- |
 | [`tala-voice-agents`](skills/tala-voice-agents/SKILL.md) | Read-only connector, public API (agents, calls, results) and post-call webhooks |
+| [`tala-connector`](plugins/hermes/skills/tala-connector/SKILL.md) | Read-only connector only, bundled with the Hermes Agent plugin |
 
 ## Links
 

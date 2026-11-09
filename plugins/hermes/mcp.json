@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "tala": {
+      "type": "streamable-http",
+      "url": "https://mcp.tala-assistant.com/mcp"
+    }
+  }
+}
