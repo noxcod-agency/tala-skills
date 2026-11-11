@@ -6,9 +6,10 @@ Agent skills for [Tala](https://www.tala-assistant.com), AI phone agents that an
 
 With this skill, your coding or chat assistant knows how to:
 
-- connect ChatGPT, Claude or Claude Code to Tala's read-only connector, then answer "show my latest calls" or "summarize this call";
-- use the Tala public API to list agents, read call history and results, and start an outbound call only after your confirmation;
-- receive post-call webhooks in a CRM, Zapier, Make or n8n, and handle repeated deliveries.
+- connect ChatGPT, Claude, Claude Code or Hermes Agent to Tala's read-only connector, then answer "show my latest calls" or "summarize this call";
+- use the Tala public API in read-only mode to list agents and read call history and results.
+
+The skill is read-only: it never places calls and does not handle webhook deliveries. To start calls or receive post-call webhooks, follow Tala's documentation (links below).
 
 ## Install
 
@@ -26,7 +27,7 @@ The skill installs in Claude Code, Codex, Cursor and the other agents supported 
 
 | Skill | What it does |
 | --- | --- |
-| [`tala-voice-agents`](skills/tala-voice-agents/SKILL.md) | Read-only connector, public API (agents, calls, results) and post-call webhooks |
+| [`tala-voice-agents`](skills/tala-voice-agents/SKILL.md) | Read-only connector and read-only public API (agents, calls, results) |
 | [`tala-connector`](plugins/hermes/skills/tala-connector/SKILL.md) | Read-only connector only, bundled with the Hermes Agent plugin |
 
 ## Links
